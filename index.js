@@ -3,7 +3,7 @@ const express=require('express')
 const cors=require('cors')
 const app=express()
 const port=process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 app.use(cors())
 app.use(express.json())
@@ -39,7 +39,95 @@ async function run() {
 
 
 
-  const assingmentTotal=client.connect()
+  const assignmentTotal=client.db('assignmentDB').collection('assignment')
+
+
+
+  app.post('/assignment',async(req,res)=>{
+
+    const assignmentInfo=req.body;
+    console.log('Assignment upload',assignmentInfo)
+    const result=await assignmentTotal.insertOne(assignmentInfo)
+   res.send(result)
+
+ });
+
+app.get('/assignment',async(req,res)=>{
+ const cursor=assignmentTotal.find()
+ const result=await cursor.toArray()
+ res.send(result)
+
+
+})
+
+
+ app.get('/assignment/:id',async(req,res)=>{
+const id=req.params.id
+const query={_id:new ObjectId(id)}
+const result =await assignmentTotal.findOne(query)
+
+res.send(result)
+})
+
+
+
+app.put('/update/:id',async(req,res)=>{
+
+const id=req.params.id
+const filter={_id:new ObjectId(id)}
+const options = { upsert: true };
+ const updateAssignment=req.body
+ const updateAssignments={
+ $set:{
+
+
+  title:updateAssignment.title,
+  thumbailImage:updateAssignment.thumbailImage,
+  description:updateAssignment.description,
+  mark:updateAssignment.mark,
+  assignmentLevel:updateAssignment.assignmentLevel,
+  date:updateAssignment.date
+
+}
+}
+
+
+const result=await assignmentTotal.updateOne(filter,updateAssignments,options)
+res.send(result)
+
+
+
+
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+app.delete('/assignment/:id',async(req,res)=>{
+
+    const id=req.params.id;
+    const query={_id:new ObjectId(id)}
+    const result=await assignmentTotal.deleteOne(query)
+    res.send(result)
+   
+    });
+
+
+
+
 
 
 
