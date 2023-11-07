@@ -1,12 +1,54 @@
 
 const express=require('express')
 const cors=require('cors')
+const jwt= require('jsonwebtoken');
+const cookieParser=require('cookie-parser')
 const app=express()
 const port=process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+require('dotenv').config()
+app.use(cors({
+  origin:'http://localhost:5173',
+ credentials:true
 
-app.use(cors())
+}))
 app.use(express.json())
+app.use(cookieParser());
+
+
+
+
+const logger=(req,res,next)=>{
+  console.log('called',req.method,req.originalUrl)
+next()
+ }
+
+
+const verifyToken=async(req,res,next)=>{
+  const token=req.cookies?.token
+  
+ if(!token){
+  return res.status(401).send({message:'No Permission'})
+ }
+ jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err,decoded)=>{
+if(err){
+  console.log(err)
+  return res.status(401).send({message:'Unathorized'})
+}
+
+req.user=decoded
+next()
+
+ })
+}
+
+
+
+
+
+
+
+
 
 app.get('/',(req,res)=>{
   
@@ -40,6 +82,48 @@ async function run() {
 
 
   const assignmentTotal=client.db('assignmentDB').collection('assignment')
+ const submitedAssignment=client.db('submittedDB').collection('submit')
+
+
+
+
+
+
+
+
+
+//  token creating
+
+  app.post('/jwt',async(req,res)=>{
+ const user=req.body
+ console.log(user)
+ const token=jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{expiresIn:'1hr'})
+ res.
+ cookie('token',token,{
+  httpOnly:true,
+  secure:true,
+  sameSite:'none'
+
+ })
+
+.send({success:true})
+
+})
+
+
+app.post('/logout',async(req,res)=>{
+const user=req.body
+res.clearCookie('token').send({success:true})
+
+
+})
+
+
+
+
+
+
+
 
 
 
@@ -52,16 +136,22 @@ async function run() {
 
  });
 
-app.get('/assignment',async(req,res)=>{
- const cursor=assignmentTotal.find()
- const result=await cursor.toArray()
+app.get('/assignment',logger,verifyToken,async(req,res)=>{
+
+  const page=parseInt(req.query.page)
+  const size=parseInt(req.query.size)
+  console.log('pagination',req.query)
+ const result=await assignmentTotal.find()
+ .skip(page*size)
+ .limit(size)
+ .toArray()
  res.send(result)
 
 
 })
 
 
- app.get('/assignment/:id',async(req,res)=>{
+ app.get('/assignment/:id',logger,verifyToken,async(req,res)=>{
 const id=req.params.id
 const query={_id:new ObjectId(id)}
 const result =await assignmentTotal.findOne(query)
@@ -101,12 +191,75 @@ res.send(result)
 })
 
 
+app.post('/submitassign',async(req,res)=>{
+
+
+  const submittedAssign=req.body;
+  console.log('Assignment submitted',submittedAssign)
+  const result=await submitedAssignment.insertOne(submittedAssign)
+ res.send(result)
+
+})
+
+
+
+app.get('/assignment/:id',logger, verifyToken,async(req,res)=>{
+  const id=req.params.id
+  const query={_id:new ObjectId(id)}
+  const result =await submitedAssignment.findOne(query)
+  
+  res.send(result)
+  })
 
 
 
 
 
 
+
+
+
+app.get('/submitassign',async(req,res) =>{
+  const cursor=submitedAssignment.find()
+  const result=await cursor.toArray()
+  res.send(result)
+
+})
+
+// })
+
+
+app.patch('/submitassign',async(req,res)=>{
+  const markStatus=req.body
+  const filter={_id:new ObjectId(id)}
+ const updateStausMark={
+  $set:{
+    status:markStatus.statusSecond,
+    mark:markStatus.examMark
+  }
+ 
+
+ }
+
+
+const result=await submitedAssignment.updateOne(filter,updateStausMark)
+res.send(result)
+
+})
+
+
+
+
+//PAGINATION
+
+app.get('/assignmentcount',verifyToken,async(req,res)=>{
+
+
+    const count=await assignmentTotal.estimatedDocumentCount();
+    res.send({count})
+
+
+})
 
 
 
