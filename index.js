@@ -9,22 +9,27 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const cors=require('cors')
 
-app.use(cors())
+app.use(cors({
+
+
+  origin:[
+    'https://study-online-assign.web.app',
+    'https://study-online-assign.firebaseapp.com'
+ 
+ ]
+  ,
+  credentials:true
+ 
 
 
 
-//  origin:[
-//    'https://study-online-assign.web.app',
-//    'https://study-online-assign.firebaseapp.com'
-
-// ]
-//  ,
-//  credentials:true
+}))
 
 
 
 
-// })) 
+
+
 
 
 
