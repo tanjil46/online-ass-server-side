@@ -1,17 +1,33 @@
 
 const express=require('express')
-const cors=require('cors')
+
 const jwt= require('jsonwebtoken');
 const cookieParser=require('cookie-parser')
 const app=express()
 const port=process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
-app.use(cors({
-  origin:'http://localhost:5173',
- credentials:true
+const cors=require('cors')
 
-}))
+app.use(cors())
+
+
+
+//  origin:[
+//    'https://study-online-assign.web.app',
+//    'https://study-online-assign.firebaseapp.com'
+
+// ]
+//  ,
+//  credentials:true
+
+
+
+
+// })) 
+
+
+
 app.use(express.json())
 app.use(cookieParser());
 
@@ -101,7 +117,10 @@ async function run() {
  res.
  cookie('token',token,{
   httpOnly:true,
-  secure:false,
+  secure:false
+
+  
+  
  
 
  })
