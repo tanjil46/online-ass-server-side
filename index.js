@@ -84,7 +84,7 @@ async function run() {
   const assignmentTotal=client.db('assignmentDB').collection('assignment')
  const submitedAssignment=client.db('submittedDB').collection('submit')
 
-
+ const submitedCollection=client.db('submitCollectionDB').collection('submited')
 
 
 
@@ -101,8 +101,8 @@ async function run() {
  res.
  cookie('token',token,{
   httpOnly:true,
-  secure:true,
-  sameSite:'none'
+  secure:false,
+ 
 
  })
 
@@ -136,7 +136,7 @@ res.clearCookie('token').send({success:true})
 
  });
 
-app.get('/assignment',logger,verifyToken,async(req,res)=>{
+app.get('/assignment',async(req,res)=>{
 
   const page=parseInt(req.query.page)
   const size=parseInt(req.query.size)
@@ -151,7 +151,7 @@ app.get('/assignment',logger,verifyToken,async(req,res)=>{
 })
 
 
- app.get('/assignment/:id',logger,verifyToken,async(req,res)=>{
+ app.get('/assignment/:id',async(req,res)=>{
 const id=req.params.id
 const query={_id:new ObjectId(id)}
 const result =await assignmentTotal.findOne(query)
@@ -203,10 +203,10 @@ app.post('/submitassign',async(req,res)=>{
 
 
 
-app.get('/assignment/:id',logger, verifyToken,async(req,res)=>{
+app.get('/assignment/:id',async(req,res)=>{
   const id=req.params.id
   const query={_id:new ObjectId(id)}
-  const result =await submitedAssignment.findOne(query)
+  const result =await assignmentTotal.findOne(query)
   
   res.send(result)
   })
@@ -219,23 +219,63 @@ app.get('/assignment/:id',logger, verifyToken,async(req,res)=>{
 
 
 
-app.get('/submitassign',async(req,res) =>{
+app.get('/submitassign',logger,verifyToken,async(req,res) =>{
   const cursor=submitedAssignment.find()
   const result=await cursor.toArray()
   res.send(result)
 
 })
 
-// })
+
+
+
+
+
+
+
+
+
+
+
+
+
+app.post('/submitted',async(req,res)=>{
+
+
+  const submitted=req.body;
+  console.log('Assignment submitted',submitted)
+  const result=await submitedCollection.insertOne(submitted)
+ res.send(result)
+
+})
+
+
+
+
+
+
+app.get('/submitted',logger,verifyToken,async(req,res) =>{
+  const cursor=submitedCollection.find()
+  const result=await cursor.toArray()
+  res.send(result)
+
+})
+
+
+
+
+
+
+
 
 
 app.patch('/submitassign',async(req,res)=>{
   const markStatus=req.body
-  const filter={_id:new ObjectId(id)}
+  const filter={email:markStatus.email}
  const updateStausMark={
   $set:{
-    status:markStatus.statusSecond,
-    mark:markStatus.examMark
+    status:markStatus.statusSecond
+   
   }
  
 
@@ -252,7 +292,7 @@ res.send(result)
 
 //PAGINATION
 
-app.get('/assignmentcount',verifyToken,async(req,res)=>{
+app.get('/assignmentcount',async(req,res)=>{
 
 
     const count=await assignmentTotal.estimatedDocumentCount();
